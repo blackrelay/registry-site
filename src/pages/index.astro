@@ -3,97 +3,158 @@ import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
 import StatusPill from "../components/StatusPill.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { collectionCards, explorerRoutes, siteConfig } from "../config/site";
+import { collectionCards, explorerRoutes } from "../config/site";
 ---
 
 <BaseLayout>
   <Header />
   <main id="main">
-    <section class="hero section" aria-labelledby="registry-title">
-      <div class="hero__copy">
-        <p class="terminal-label">PUBLIC REGISTRY TERMINAL</p>
-        <h1 id="registry-title">Search The Signal</h1>
-        <p>
-          Explore public Registry records, current-state collections, source evidence, events and
-          killmails from the Black Relay API.
-        </p>
-        <div class="hero__actions">
-          <a class="terminal-button" href="#search">Open Explorer</a>
-          <a class="terminal-button" href={siteConfig.endpoints.docs}>Read API Docs</a>
+    <section class="registry-shell" id="search" aria-labelledby="registry-title">
+      <div class="registry-topline">
+        <div>
+          <p class="terminal-label">PUBLIC REGISTRY TERMINAL</p>
+          <h1 id="registry-title">Explore Registry Data</h1>
         </div>
-      </div>
-      <aside class="hero__status terminal-panel" aria-label="API status summary">
-        <StatusPill label="API" value="CHECKING" />
-        <StatusPill label="ENV" value="STILLNESS" />
-        <StatusPill label="CYCLE" value="6" />
-        <div class="signal-rule"></div>
-        <p data-ready-summary>Waiting for the public API readiness signal.</p>
-      </aside>
-    </section>
-
-    <section class="section explorer-section" id="search" aria-labelledby="search-title">
-      <div class="section-head">
-        <span class="section-number">01 //</span>
-        <h2 class="section-title" id="search-title">REGISTRY://EXPLORER</h2>
+        <aside class="registry-status" aria-label="API status summary">
+          <StatusPill label="API" value="CHECKING" />
+          <StatusPill label="ENV" value="STILLNESS" />
+          <StatusPill label="CYCLE" value="6" />
+        </aside>
       </div>
 
-      <div class="explorer-grid">
-        <form class="terminal-panel explorer-form" data-explorer-form>
-          <label>
-            <span>Route</span>
-            <select name="route">
-              {explorerRoutes.map((route) => <option value={route.path}>{route.label}</option>)}
-            </select>
-          </label>
-          <label>
-            <span>Search</span>
-            <input name="q" type="search" placeholder="system, tribe, item, source..." />
-          </label>
-          <label>
-            <span>Cycles</span>
-            <select name="cycles">
-              <option value="current">current</option>
-              <option value="6">6</option>
-              <option value="all">all</option>
-              <option value="5,6">5,6</option>
-            </select>
-          </label>
-          <label>
-            <span>Environment</span>
-            <input name="environment" value="stillness" />
-          </label>
-          <label>
-            <span>Limit</span>
-            <input name="limit" type="number" min="1" max="200" value="25" />
-          </label>
-          <button class="terminal-button" type="submit">Query</button>
-        </form>
+      <div class="count-strip" aria-label="Registry totals from API metrics">
+        <span class="count-chip">
+          <strong data-count-key="entities">...</strong>
+          <small>Entities</small>
+        </span>
+        <span class="count-chip">
+          <strong data-count-key="events">...</strong>
+          <small>Events</small>
+        </span>
+        <span class="count-chip">
+          <strong data-count-key="killmails">...</strong>
+          <small>Killmails</small>
+        </span>
+        <span class="count-chip">
+          <strong data-count-key="facts">...</strong>
+          <small>Facts</small>
+        </span>
+        <span class="count-chip">
+          <strong data-count-key="relations">...</strong>
+          <small>Relations</small>
+        </span>
+        <span class="count-chip">
+          <strong data-count-key="sources">...</strong>
+          <small>Sources</small>
+        </span>
+      </div>
 
-        <section class="terminal-panel results-panel" aria-live="polite">
-          <div class="panel-head">
-            <span class="terminal-label">RESULTS</span>
+      <div class="terminal-frame registry-workbench">
+        <aside class="route-panel" aria-label="Registry collections">
+          <div class="route-panel__head">
+            <span class="section-number">01 //</span>
+            <strong>COLLECTIONS</strong>
+          </div>
+          <nav class="route-tabs" aria-label="Explorer routes">
+            {
+              explorerRoutes.map((route, index) => (
+                <button
+                  class="route-tab"
+                  type="button"
+                  data-route-tab={route.path}
+                  aria-pressed={index === 1 ? "true" : "false"}
+                >
+                  <span>{route.kind}</span>
+                  {route.label}
+                </button>
+              ))
+            }
+          </nav>
+        </aside>
+
+        <section class="explorer-main" aria-live="polite">
+          <form class="explorer-toolbar" data-explorer-form>
+            <label class="route-select">
+              <span>Route</span>
+              <select name="route">
+                {
+                  explorerRoutes.map((route) => (
+                    <option value={route.path} selected={route.path === "/v1/current/characters"}>
+                      {route.label}
+                    </option>
+                  ))
+                }
+              </select>
+            </label>
+            <label class="search-field">
+              <span>Search</span>
+              <input name="q" type="search" placeholder="character, tribe, system, item..." />
+            </label>
+            <label>
+              <span>Cycle</span>
+              <select name="cycles">
+                <option value="current">current</option>
+                <option value="6">6</option>
+                <option value="all">all</option>
+                <option value="5,6">5,6</option>
+              </select>
+            </label>
+            <label>
+              <span>Environment</span>
+              <input name="environment" value="stillness" />
+            </label>
+            <label>
+              <span>Limit</span>
+              <input name="limit" type="number" min="1" max="200" value="50" />
+            </label>
+            <button class="terminal-button" type="submit">Query</button>
+          </form>
+
+          <div class="result-toolbar">
+            <div>
+              <span class="terminal-label" data-active-route>CHARACTERS</span>
+              <p data-results-summary>Loading current character records...</p>
+            </div>
             <button class="plain-button" type="button" data-load-more hidden>Load next cursor</button>
           </div>
-          <div data-results-summary class="muted-copy">No query has run yet.</div>
-          <div class="result-list" data-results></div>
+
+          <div class="table-shell">
+            <table class="registry-table">
+              <thead data-results-head>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Environment</th>
+                  <th>Cycle</th>
+                  <th>Source</th>
+                  <th>Updated</th>
+                </tr>
+              </thead>
+              <tbody data-results>
+                <tr>
+                  <td colspan="6">Loading records...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </section>
 
-        <section class="terminal-panel detail-panel" aria-live="polite">
+        <aside class="detail-panel" aria-live="polite">
           <div class="panel-head">
             <span class="terminal-label">DETAIL</span>
             <button class="plain-button" type="button" data-copy-detail hidden>Copy JSON</button>
           </div>
-          <pre data-detail>{`Select a result to inspect provenance and raw public fields.`}</pre>
-        </section>
+          <pre data-detail>{`Select a row to inspect source-backed fields.`}</pre>
+        </aside>
       </div>
     </section>
 
-    <section class="section" id="collections" aria-labelledby="collections-title">
+    <section class="section ops-section" id="ops" aria-labelledby="ops-title">
       <div class="section-head">
         <span class="section-number">02 //</span>
-        <h2 class="section-title" id="collections-title">CURRENT://COLLECTIONS</h2>
+        <h2 class="section-title" id="ops-title">OPS://FRESHNESS</h2>
       </div>
-      <div class="collection-grid">
+      <div class="collection-grid" id="collections" aria-label="Current collection shortcuts">
         {
           collectionCards.map(([label, route, summary]) => (
             <button class="collection-card terminal-record" type="button" data-route-shortcut={route}>
@@ -103,13 +164,6 @@ import { collectionCards, explorerRoutes, siteConfig } from "../config/site";
             </button>
           ))
         }
-      </div>
-    </section>
-
-    <section class="section ops-section" id="ops" aria-labelledby="ops-title">
-      <div class="section-head">
-        <span class="section-number">03 //</span>
-        <h2 class="section-title" id="ops-title">OPS://FRESHNESS</h2>
       </div>
       <div class="ops-grid">
         <article class="terminal-panel">
