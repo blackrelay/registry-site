@@ -910,6 +910,40 @@ pre {
   font-size: 0.82rem;
 }
 
+.page-navigator {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.page-number-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.page-button,
+.page-number {
+  min-width: 2.35rem;
+  white-space: nowrap;
+}
+
+.page-number[aria-current="page"] {
+  border-color: rgba(254, 71, 0, 0.72);
+  background: rgba(254, 71, 0, 0.16);
+  color: var(--frontier-orange);
+}
+
+.page-button:disabled,
+.page-number:disabled {
+  cursor: not-allowed;
+  border-color: rgba(254, 71, 0, 0.1);
+  color: var(--text-dim);
+  opacity: 0.62;
+}
+
 .table-shell {
   overflow: auto;
   max-height: min(680px, calc(100vh - 18rem));
@@ -997,6 +1031,19 @@ pre {
   margin-bottom: 1rem;
 }
 
+.ops-panel--scroll {
+  max-height: 28rem;
+  overflow: hidden;
+}
+
+.ops-panel--scroll pre {
+  max-height: 22rem;
+  overflow: auto;
+  padding-right: 0.35rem;
+  scrollbar-color: rgba(254, 71, 0, 0.76) rgba(0, 0, 0, 0.7);
+  scrollbar-width: thin;
+}
+
 @media (min-width: 760px) {
   .registry-topline {
     grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.32fr);
@@ -1066,9 +1113,29 @@ pre {
     flex-direction: column;
   }
 
+  .page-navigator {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .page-number-list {
+    order: -1;
+    width: 100%;
+  }
+
   .result-toolbar .plain-button,
   .explorer-toolbar .terminal-button {
     width: 100%;
+  }
+
+  .page-navigator .page-button {
+    width: auto;
+    flex: 1 1 6.5rem;
+  }
+
+  .page-number-list .page-number {
+    width: auto;
+    min-width: 2.35rem;
   }
 
   .detail-panel pre,

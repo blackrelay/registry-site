@@ -94,6 +94,7 @@ import { collectionCards, explorerRoutes } from "../config/site";
               <span>Cycle</span>
               <select name="cycles">
                 <option value="current">current</option>
+                <option value="5">5</option>
                 <option value="6">6</option>
                 <option value="all">all</option>
                 <option value="5,6">5,6</option>
@@ -115,7 +116,12 @@ import { collectionCards, explorerRoutes } from "../config/site";
               <span class="terminal-label" data-active-route>CHARACTERS</span>
               <p data-results-summary>Loading current character records...</p>
             </div>
-            <button class="plain-button" type="button" data-load-more hidden>Load next cursor</button>
+            <nav class="page-navigator" data-pagination hidden aria-label="Result pages">
+              <button class="plain-button page-button" type="button" data-page-first>First</button>
+              <button class="plain-button page-button" type="button" data-page-prev>Previous</button>
+              <div class="page-number-list" data-page-list aria-label="Visited pages"></div>
+              <button class="plain-button page-button" type="button" data-page-next>Next</button>
+            </nav>
           </div>
 
           <div class="table-shell">
@@ -170,13 +176,9 @@ import { collectionCards, explorerRoutes } from "../config/site";
           <span class="terminal-label">READY</span>
           <pre data-ready-json>{`Waiting for /v1/ready.`}</pre>
         </article>
-        <article class="terminal-panel">
+        <article class="terminal-panel ops-panel ops-panel--scroll">
           <span class="terminal-label">FRESHNESS</span>
           <pre data-freshness-json>{`Waiting for /v1/ops/freshness.`}</pre>
-        </article>
-        <article class="terminal-panel">
-          <span class="terminal-label">SOURCE GAPS</span>
-          <pre data-source-gaps-json>{`Waiting for /v1/ops/source-gaps.`}</pre>
         </article>
       </div>
     </section>

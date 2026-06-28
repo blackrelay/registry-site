@@ -37,7 +37,6 @@ export const explorerRoutes = [
   { label: "Events", path: "/v1/events", kind: "event" },
   { label: "Killmails", path: "/v1/killmails", kind: "killmail" },
   { label: "Sources", path: "/v1/sources", kind: "source" },
-  { label: "Source Gaps", path: "/v1/ops/source-gaps", kind: "document" },
 ] as const;
 
 export const collectionCards = [
