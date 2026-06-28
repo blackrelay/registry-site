@@ -14,6 +14,7 @@ export const siteConfig = {
 } as const;
 
 export const navItems = [
+  { label: "HOME", href: siteConfig.endpoints.home },
   { label: "SEARCH", href: "#search" },
   { label: "COLLECTIONS", href: "#collections" },
   { label: "OPS", href: "#ops" },

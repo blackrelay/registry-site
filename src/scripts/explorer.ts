@@ -39,6 +39,8 @@ const countValues = [...document.querySelectorAll<HTMLElement>("[data-count-key]
 const routeCountValues = [...document.querySelectorAll<HTMLElement>("[data-route-count-key]")];
 const readyJSON = document.querySelector<HTMLElement>("[data-ready-json]");
 const freshnessJSON = document.querySelector<HTMLElement>("[data-freshness-json]");
+const apiStatusPill = document.querySelector<HTMLElement>('[data-status-key="api"]');
+const apiStatusValue = document.querySelector<HTMLElement>('[data-status-value="api"]');
 
 let activePath = "/v1/current/characters";
 let activeBaseParams = new URLSearchParams();
@@ -46,6 +48,7 @@ let activeDetailJSON = "";
 let activePageIndex = 0;
 let activePages: PageState[] = [];
 let metricValues = new Map<string, number>();
+let readyEnvelopePromise: Promise<ApiEnvelope<unknown>> | undefined;
 
 const responseCache = new Map<string, ApiEnvelope<unknown[]>>();
 
@@ -211,6 +214,55 @@ async function fetchText(path: string): Promise<string> {
   return body;
 }
 
+function setApiStatus(value: "CHECKING" | "ONLINE" | "SERVICE BAD" | "OFFLINE", tone: "default" | "good" | "warn" | "bad", title?: string): void {
+  if (apiStatusPill) {
+    apiStatusPill.dataset.tone = tone;
+  }
+  if (apiStatusValue) {
+    apiStatusValue.textContent = value;
+    if (title) {
+      apiStatusValue.title = title;
+    } else {
+      apiStatusValue.removeAttribute("title");
+    }
+  }
+}
+
+function readyPayloadLooksHealthy(payload: ApiEnvelope<unknown>): boolean {
+  const data = asRecord(payload.data ?? payload);
+  const status = firstString(data.status, data.ready, data.ok).toLowerCase();
+  if (!status) {
+    return true;
+  }
+  return ["ok", "ready", "online", "true"].includes(status);
+}
+
+async function loadApiStatus(): Promise<void> {
+  setApiStatus("CHECKING", "warn");
+  try {
+    const body = await fetchReadyEnvelope();
+    if (readyPayloadLooksHealthy(body)) {
+      setApiStatus("ONLINE", "good");
+    } else {
+      setApiStatus("SERVICE BAD", "warn", "The API responded, but readiness was not healthy.");
+    }
+  } catch (error) {
+    setApiStatus("OFFLINE", "bad", error instanceof Error ? error.message : String(error));
+  }
+}
+
+function fetchReadyEnvelope(): Promise<ApiEnvelope<unknown>> {
+  readyEnvelopePromise ??= fetchEnvelope<unknown>("/v1/ready");
+  return readyEnvelopePromise;
+}
+
+function cycleParam(value: string): string {
+  if (value === "6") {
+    return value;
+  }
+  return "";
+}
+
 function formParams(cursor?: string): URLSearchParams {
   const params = new URLSearchParams();
   if (!form) {
@@ -219,7 +271,11 @@ function formParams(cursor?: string): URLSearchParams {
   const data = new FormData(form);
   for (const key of ["q", "cycles", "environment", "limit"]) {
     const value = String(data.get(key) ?? "").trim();
-    if (key === "cycles" && value === "current") {
+    if (key === "cycles") {
+      const cycleValue = cycleParam(value);
+      if (cycleValue) {
+        params.set(key, cycleValue);
+      }
       continue;
     }
     if (value) {
@@ -725,13 +781,23 @@ async function loadOperations(): Promise<void> {
   await Promise.all(
     targets.map(async ([path, target]) => {
       try {
-        const body = await fetchEnvelope<unknown>(path);
+        const body = path === "/v1/ready" ? await fetchReadyEnvelope() : await fetchEnvelope<unknown>(path);
         if (target) {
           target.textContent = JSON.stringify(body.data ?? body, null, 2);
+        }
+        if (path === "/v1/ready") {
+          if (readyPayloadLooksHealthy(body)) {
+            setApiStatus("ONLINE", "good");
+          } else {
+            setApiStatus("SERVICE BAD", "warn", "The API responded, but readiness was not healthy.");
+          }
         }
       } catch (error) {
         if (target) {
           target.textContent = error instanceof Error ? error.message : String(error);
+        }
+        if (path === "/v1/ready") {
+          setApiStatus("OFFLINE", "bad", error instanceof Error ? error.message : String(error));
         }
       }
     }),
@@ -826,6 +892,7 @@ for (const shortcut of document.querySelectorAll<HTMLButtonElement>("[data-route
 }
 
 syncRouteControls(activePath);
+void loadApiStatus();
 void loadCounts();
 void startQuery().finally(() => {
   window.setTimeout(() => {

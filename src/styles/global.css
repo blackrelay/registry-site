@@ -492,6 +492,10 @@ img {
   color: var(--warning);
 }
 
+.status-pill[data-tone="bad"] strong {
+  color: #ff4d4d;
+}
+
 .explorer-grid {
   display: grid;
   gap: 1rem;

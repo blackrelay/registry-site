@@ -2,13 +2,14 @@
 interface Props {
   label: string;
   value: string;
-  tone?: "default" | "good" | "warn";
+  tone?: "default" | "good" | "warn" | "bad";
+  statusKey?: string;
 }
 
-const { label, value, tone = "default" } = Astro.props;
+const { label, value, tone = "default", statusKey } = Astro.props;
 ---
 
-<span class="status-pill" data-tone={tone}>
+<span class="status-pill" data-tone={tone} data-status-key={statusKey}>
   <span>{label}</span>
-  <strong>{value}</strong>
+  <strong data-status-value={statusKey}>{value}</strong>
 </span>
