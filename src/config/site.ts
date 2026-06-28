@@ -18,7 +18,7 @@ export const navItems = [
   { label: "SEARCH", href: "#search" },
   { label: "COLLECTIONS", href: "#collections" },
   { label: "OPS", href: "#ops" },
-  { label: "API DOCS", href: siteConfig.endpoints.docs },
+  { label: "DEV DOCS", href: siteConfig.endpoints.docs },
 ] as const;
 
 export const explorerRoutes = [
