@@ -1,0 +1,28 @@
+---
+import { siteConfig } from "../config/site";
+import { externalLinkAttrs } from "../utils/links";
+
+const links = [
+  ["API", siteConfig.endpoints.api],
+  ["API DOCS", siteConfig.endpoints.docs],
+  ["STATUS", siteConfig.endpoints.status],
+  ["SOURCE VAULT", siteConfig.endpoints.github],
+] as const;
+---
+
+<footer class="site-footer">
+  <div>
+    <strong>END TRANSMISSION</strong>
+    <p>
+      Black Relay Registry is a public explorer for source-aware EVE Frontier data. Canonical
+      records remain owned by the Registry indexer and export pipeline.
+    </p>
+    <p>
+      Not affiliated with CCP Games, Fenris Creations, EVE Frontier or any related rights holders.
+      EVE and related marks belong to their owners.
+    </p>
+  </div>
+  <nav aria-label="Footer">
+    {links.map(([label, href]) => <a href={href} {...externalLinkAttrs(href)}>{label}</a>)}
+  </nav>
+</footer>

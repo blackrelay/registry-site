@@ -1,0 +1,15 @@
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=()
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-XSS-Protection: 0
+
+/_astro/*.css
+  Use-As-Dictionary: match="/_astro/*.css", type="raw"
+
+/_astro/*.js
+  Use-As-Dictionary: match="/_astro/*.js", type="raw"

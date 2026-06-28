@@ -1,0 +1,134 @@
+---
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import StatusPill from "../components/StatusPill.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { collectionCards, explorerRoutes, siteConfig } from "../config/site";
+---
+
+<BaseLayout>
+  <Header />
+  <main id="main">
+    <section class="hero section" aria-labelledby="registry-title">
+      <div class="hero__copy">
+        <p class="terminal-label">PUBLIC REGISTRY TERMINAL</p>
+        <h1 id="registry-title">Search The Signal</h1>
+        <p>
+          Explore public Registry records, current-state collections, source evidence, events and
+          killmails from the Black Relay API.
+        </p>
+        <div class="hero__actions">
+          <a class="terminal-button" href="#search">Open Explorer</a>
+          <a class="terminal-button" href={siteConfig.endpoints.docs}>Read API Docs</a>
+        </div>
+      </div>
+      <aside class="hero__status terminal-panel" aria-label="API status summary">
+        <StatusPill label="API" value="CHECKING" />
+        <StatusPill label="ENV" value="STILLNESS" />
+        <StatusPill label="CYCLE" value="6" />
+        <div class="signal-rule"></div>
+        <p data-ready-summary>Waiting for the public API readiness signal.</p>
+      </aside>
+    </section>
+
+    <section class="section explorer-section" id="search" aria-labelledby="search-title">
+      <div class="section-head">
+        <span class="section-number">01 //</span>
+        <h2 class="section-title" id="search-title">REGISTRY://EXPLORER</h2>
+      </div>
+
+      <div class="explorer-grid">
+        <form class="terminal-panel explorer-form" data-explorer-form>
+          <label>
+            <span>Route</span>
+            <select name="route">
+              {explorerRoutes.map((route) => <option value={route.path}>{route.label}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>Search</span>
+            <input name="q" type="search" placeholder="system, tribe, item, source..." />
+          </label>
+          <label>
+            <span>Cycles</span>
+            <select name="cycles">
+              <option value="current">current</option>
+              <option value="6">6</option>
+              <option value="all">all</option>
+              <option value="5,6">5,6</option>
+            </select>
+          </label>
+          <label>
+            <span>Environment</span>
+            <input name="environment" value="stillness" />
+          </label>
+          <label>
+            <span>Limit</span>
+            <input name="limit" type="number" min="1" max="200" value="25" />
+          </label>
+          <button class="terminal-button" type="submit">Query</button>
+        </form>
+
+        <section class="terminal-panel results-panel" aria-live="polite">
+          <div class="panel-head">
+            <span class="terminal-label">RESULTS</span>
+            <button class="plain-button" type="button" data-load-more hidden>Load next cursor</button>
+          </div>
+          <div data-results-summary class="muted-copy">No query has run yet.</div>
+          <div class="result-list" data-results></div>
+        </section>
+
+        <section class="terminal-panel detail-panel" aria-live="polite">
+          <div class="panel-head">
+            <span class="terminal-label">DETAIL</span>
+            <button class="plain-button" type="button" data-copy-detail hidden>Copy JSON</button>
+          </div>
+          <pre data-detail>{`Select a result to inspect provenance and raw public fields.`}</pre>
+        </section>
+      </div>
+    </section>
+
+    <section class="section" id="collections" aria-labelledby="collections-title">
+      <div class="section-head">
+        <span class="section-number">02 //</span>
+        <h2 class="section-title" id="collections-title">CURRENT://COLLECTIONS</h2>
+      </div>
+      <div class="collection-grid">
+        {
+          collectionCards.map(([label, route, summary]) => (
+            <button class="collection-card terminal-record" type="button" data-route-shortcut={route}>
+              <span>{route}</span>
+              <strong>{label}</strong>
+              <p>{summary}</p>
+            </button>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="section ops-section" id="ops" aria-labelledby="ops-title">
+      <div class="section-head">
+        <span class="section-number">03 //</span>
+        <h2 class="section-title" id="ops-title">OPS://FRESHNESS</h2>
+      </div>
+      <div class="ops-grid">
+        <article class="terminal-panel">
+          <span class="terminal-label">READY</span>
+          <pre data-ready-json>{`Waiting for /v1/ready.`}</pre>
+        </article>
+        <article class="terminal-panel">
+          <span class="terminal-label">FRESHNESS</span>
+          <pre data-freshness-json>{`Waiting for /v1/ops/freshness.`}</pre>
+        </article>
+        <article class="terminal-panel">
+          <span class="terminal-label">SOURCE GAPS</span>
+          <pre data-source-gaps-json>{`Waiting for /v1/ops/source-gaps.`}</pre>
+        </article>
+      </div>
+    </section>
+  </main>
+  <Footer />
+  <script>
+    import "../scripts/explorer";
+  </script>
+</BaseLayout>

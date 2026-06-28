@@ -1,0 +1,15 @@
+packages:
+  - .
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true
+
+overrides:
+  electron-to-chromium: 1.5.379
+
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+  - workerd

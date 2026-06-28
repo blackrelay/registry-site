@@ -1,0 +1,34 @@
+---
+import { navItems, siteConfig } from "../config/site";
+import { externalLinkAttrs } from "../utils/links";
+---
+
+<header class="site-header" aria-label="Black Relay Registry">
+  <a class="brand" href="/" aria-label="Black Relay Registry home">
+    <img src="/logo.png" alt="" width="48" height="48" />
+    <span>REG//{siteConfig.name}</span>
+  </a>
+
+  <nav class="desktop-nav" aria-label="Primary">
+    {
+      navItems.map((item) => (
+        <a href={item.href} {...externalLinkAttrs(item.href)}>
+          <span>[</span> {item.label} <span>]</span>
+        </a>
+      ))
+    }
+  </nav>
+
+  <details class="mobile-nav">
+    <summary>MENU</summary>
+    <nav aria-label="Mobile primary">
+      {
+        navItems.map((item) => (
+          <a href={item.href} {...externalLinkAttrs(item.href)}>
+            <span>[</span> {item.label} <span>]</span>
+          </a>
+        ))
+      }
+    </nav>
+  </details>
+</header>
