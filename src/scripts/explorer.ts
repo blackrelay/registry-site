@@ -93,13 +93,34 @@ const columnSets: Array<[RegExp, Column[]]> = [
     ],
   ],
   [
+    /regions/,
+    [
+      { key: "name", label: "Region", value: recordTitle, className: "cell-strong" },
+      { key: "id", label: "Region ID", value: (record) => formatIdentifier(fact(record, "region_id", "item_id") || recordId(record)) },
+      { key: "constellations", label: "Constellations", value: (record) => fact(record, "constellation_count") || nestedString(record, ["derived", "connectedSystemCount"]) },
+      { key: "source", label: "Source", value: sourceSummary },
+      { key: "updated", label: "Updated", value: (record) => field(record, "updatedAt", "createdAt") },
+    ],
+  ],
+  [
+    /constellations/,
+    [
+      { key: "name", label: "Constellation", value: recordTitle, className: "cell-strong" },
+      { key: "id", label: "Constellation ID", value: (record) => formatIdentifier(fact(record, "constellation_id", "item_id") || recordId(record)) },
+      { key: "region", label: "Region", value: (record) => fact(record, "region_name", "region_id") || relationTarget(record, "region") },
+      { key: "systems", label: "Systems", value: (record) => fact(record, "system_count") || nestedString(record, ["derived", "connectedSystemCount"]) },
+      { key: "source", label: "Source", value: sourceSummary },
+      { key: "updated", label: "Updated", value: (record) => field(record, "updatedAt", "createdAt") },
+    ],
+  ],
+  [
     /gates/,
     [
       { key: "name", label: "Gate", value: recordTitle, className: "cell-strong" },
       { key: "id", label: "Gate ID", value: (record) => formatIdentifier(fact(record, "item_id") || recordId(record)) },
-      { key: "system", label: "System", value: (record) => nestedString(record, ["derived", "system", "displayName"]) || relationTarget(record, "system") || formatIdentifier(fact(record, "solar_system_id")) },
+      { key: "system", label: "System", value: (record) => nestedString(record, ["derived", "system", "displayName"]) || relationTarget(record, "system", ["located_in", "deployed_in", "observed_in"]) || formatIdentifier(fact(record, "solar_system_id", "system_id")) },
       { key: "coords", label: "Coordinates", value: gateCoordinates },
-      { key: "linked", label: "Linked Gate", value: (record) => relationTarget(record, "gate") || formatIdentifier(fact(record, "linked_gate_id")) },
+      { key: "linked", label: "Linked Gate", value: (record) => relationTarget(record, "gate", ["links_to"]) || formatIdentifier(fact(record, "linked_gate_id", "linked_gate_placeholder")) },
       { key: "source", label: "Source", value: sourceSummary },
       { key: "updated", label: "Updated", value: (record) => field(record, "updatedAt", "createdAt") },
     ],
@@ -107,10 +128,10 @@ const columnSets: Array<[RegExp, Column[]]> = [
   [
     /killmails/,
     [
-      { key: "id", label: "Killmail", value: (record) => recordId(record), className: "cell-strong" },
-      { key: "victim", label: "Victim", value: (record) => field(record, "victimName", "victimDisplayName") || fact(record, "victim_name") },
-      { key: "killer", label: "Killer", value: (record) => field(record, "killerName", "killerDisplayName") || fact(record, "killer_name") },
-      { key: "system", label: "System", value: (record) => field(record, "systemName") || fact(record, "system_name", "solar_system_id") },
+      { key: "id", label: "Killmail", value: (record) => formatIdentifier(recordId(record)), className: "cell-strong" },
+      { key: "victim", label: "Victim", value: (record) => resolvedValue(record, "victim", "victimName", "victimDisplayName", "victimCharacterId") || fact(record, "victim_name") },
+      { key: "killer", label: "Killer", value: (record) => resolvedValue(record, "killer", "killerName", "killerDisplayName", "killerCharacterId", "killerTypeId") || fact(record, "killer_name") },
+      { key: "system", label: "System", value: (record) => resolvedValue(record, "system", "systemName", "systemId") || fact(record, "system_name", "solar_system_id") },
       { key: "time", label: "Occurred", value: (record) => field(record, "occurredAt", "timestamp", "createdAt") },
       { key: "source", label: "Source", value: sourceSummary },
     ],
@@ -265,18 +286,39 @@ function fact(record: UnknownRecord, ...keys: string[]): string {
   return "";
 }
 
-function relationTarget(record: UnknownRecord, type: string): string {
-  const relations = record.outgoingRelations;
-  if (!Array.isArray(relations)) {
-    return "";
-  }
-  for (const value of relations) {
-    const relation = asRecord(value);
-    if (firstString(relation.objectEntityType) === type) {
-      return formatDisplayText(firstString(relation.objectDisplayName)) || formatIdentifier(firstString(relation.objectEntityId));
+function relationTarget(record: UnknownRecord, type: string, predicates: string[] = []): string {
+  const predicateSet = new Set(predicates);
+  const candidates = [
+    ["outgoingRelations", "objectEntityType", "objectDisplayName", "objectEntityId"],
+    ["incomingRelations", "subjectEntityType", "subjectDisplayName", "subjectEntityId"],
+  ] as const;
+  for (const [relationKey, typeKey, displayKey, idKey] of candidates) {
+    const relations = record[relationKey];
+    if (!Array.isArray(relations)) {
+      continue;
+    }
+    for (const value of relations) {
+      const relation = asRecord(value);
+      if (predicateSet.size > 0 && !predicateSet.has(firstString(relation.predicate))) {
+        continue;
+      }
+      const entityID = firstString(relation[idKey]);
+      const entityType = firstString(relation[typeKey]) || entityID.split(":")[0] || "";
+      if (entityType === type) {
+        return formatDisplayText(firstString(relation[displayKey])) || formatIdentifier(entityID);
+      }
     }
   }
   return "";
+}
+
+function resolvedValue(record: UnknownRecord, key: string, ...fallbackKeys: string[]): string {
+  const value = asRecord(record[key]);
+  const resolved = firstString(value.displayName, value.name, value.rawId, value.entityId, value.typeId);
+  if (resolved) {
+    return formatDisplayText(formatIdentifier(resolved));
+  }
+  return formatIdentifier(field(record, ...fallbackKeys));
 }
 
 function recordId(record: UnknownRecord): string {
@@ -311,6 +353,10 @@ function sourceSummary(record: UnknownRecord): string {
   if (Array.isArray(sources) && sources.length > 0) {
     return `${sources.length} source${sources.length === 1 ? "" : "s"}`;
   }
+  const semanticSources = record.sources;
+  if (Array.isArray(semanticSources) && semanticSources.length > 0) {
+    return `${semanticSources.length} source${semanticSources.length === 1 ? "" : "s"}`;
+  }
   return firstString(record.sourceKind, record.sourceId, "source-backed");
 }
 
@@ -322,9 +368,23 @@ function truncate(value: string, length: number): string {
 }
 
 function gateCoordinates(record: UnknownRecord): string {
-  const x = fact(record, "x");
-  const y = fact(record, "y");
-  const z = fact(record, "z");
+  const facts = nestedRecord(record, "facts");
+  const coordinates = facts.coordinates ?? facts.position ?? record.coordinates ?? record.position;
+  if (Array.isArray(coordinates) && coordinates.length >= 3) {
+    return coordinates.slice(0, 3).map((value) => firstString(value) || "?").join(", ");
+  }
+  if (typeof coordinates === "object" && coordinates !== null) {
+    const coordinateRecord = asRecord(coordinates);
+    const x = firstString(coordinateRecord.x, coordinateRecord.X);
+    const y = firstString(coordinateRecord.y, coordinateRecord.Y);
+    const z = firstString(coordinateRecord.z, coordinateRecord.Z);
+    if (x || y || z) {
+      return [x || "?", y || "?", z || "?"].join(", ");
+    }
+  }
+  const x = fact(record, "x", "position_x", "coordinate_x", "location_x");
+  const y = fact(record, "y", "position_y", "coordinate_y", "location_y");
+  const z = fact(record, "z", "position_z", "coordinate_z", "location_z");
   if (!x && !y && !z) {
     return "";
   }
@@ -360,7 +420,10 @@ function stripWrappingNameQuotes(value: string): string {
   while ((out.startsWith("'") && out.endsWith("'")) || (out.startsWith("’") && out.endsWith("’"))) {
     out = out.slice(1, -1).trim();
   }
-  return out;
+  return out
+    .replace(/(^|[\s([])['’]([^'’]+)['’](?=$|[\s),.;:])/g, "$1$2")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function compactLongHex(value: string): string {
@@ -474,7 +537,11 @@ function renderPageNavigator(): void {
   }
 
   pageList.replaceChildren();
-  activePages.forEach((_, index) => {
+  const windowSize = 5;
+  const start = Math.max(0, activePageIndex - windowSize + 1);
+  const end = Math.min(activePages.length, start + windowSize);
+  activePages.slice(start, end).forEach((_, offset) => {
+    const index = start + offset;
     const button = document.createElement("button");
     button.type = "button";
     button.className = "plain-button page-number";
