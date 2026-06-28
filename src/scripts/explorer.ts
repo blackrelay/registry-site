@@ -86,8 +86,9 @@ const columnSets: Array<[RegExp, Column[]]> = [
     [
       { key: "name", label: "System", value: recordTitle, className: "cell-strong" },
       { key: "id", label: "System ID", value: (record) => formatIdentifier(fact(record, "system_id", "item_id") || recordId(record)) },
-      { key: "region", label: "Region", value: (record) => fact(record, "region_name", "region_id") || relationTarget(record, "region") },
-      { key: "constellation", label: "Constellation", value: (record) => fact(record, "constellation_name", "constellation_id") || relationTarget(record, "constellation") },
+      { key: "region", label: "Region", value: (record) => fact(record, "region_name", "region_id") || nestedString(record, ["derived", "region", "displayName"]) || relationTarget(record, "region") },
+      { key: "constellation", label: "Constellation", value: (record) => fact(record, "constellation_name", "constellation_id") || nestedString(record, ["derived", "constellation", "displayName"]) || relationTarget(record, "constellation") },
+      { key: "coords", label: "Coordinates", value: coordinates },
       { key: "security", label: "Class", value: (record) => fact(record, "security_class", "solar_system_class") },
       { key: "source", label: "Source", value: sourceSummary },
     ],
@@ -98,6 +99,7 @@ const columnSets: Array<[RegExp, Column[]]> = [
       { key: "name", label: "Region", value: recordTitle, className: "cell-strong" },
       { key: "id", label: "Region ID", value: (record) => formatIdentifier(fact(record, "region_id", "item_id") || recordId(record)) },
       { key: "constellations", label: "Constellations", value: (record) => fact(record, "constellation_count") || nestedString(record, ["derived", "connectedSystemCount"]) },
+      { key: "coords", label: "Coordinates", value: coordinates },
       { key: "source", label: "Source", value: sourceSummary },
       { key: "updated", label: "Updated", value: (record) => field(record, "updatedAt", "createdAt") },
     ],
@@ -107,8 +109,9 @@ const columnSets: Array<[RegExp, Column[]]> = [
     [
       { key: "name", label: "Constellation", value: recordTitle, className: "cell-strong" },
       { key: "id", label: "Constellation ID", value: (record) => formatIdentifier(fact(record, "constellation_id", "item_id") || recordId(record)) },
-      { key: "region", label: "Region", value: (record) => fact(record, "region_name", "region_id") || relationTarget(record, "region") },
+      { key: "region", label: "Region", value: (record) => fact(record, "region_name", "region_id") || nestedString(record, ["derived", "region", "displayName"]) || relationTarget(record, "region") },
       { key: "systems", label: "Systems", value: (record) => fact(record, "system_count") || nestedString(record, ["derived", "connectedSystemCount"]) },
+      { key: "coords", label: "Coordinates", value: coordinates },
       { key: "source", label: "Source", value: sourceSummary },
       { key: "updated", label: "Updated", value: (record) => field(record, "updatedAt", "createdAt") },
     ],
@@ -119,7 +122,7 @@ const columnSets: Array<[RegExp, Column[]]> = [
       { key: "name", label: "Gate", value: recordTitle, className: "cell-strong" },
       { key: "id", label: "Gate ID", value: (record) => formatIdentifier(fact(record, "item_id") || recordId(record)) },
       { key: "system", label: "System", value: (record) => nestedString(record, ["derived", "system", "displayName"]) || relationTarget(record, "system", ["located_in", "deployed_in", "observed_in"]) || formatIdentifier(fact(record, "solar_system_id", "system_id")) },
-      { key: "coords", label: "Coordinates", value: gateCoordinates },
+      { key: "coords", label: "Coordinates", value: coordinates },
       { key: "linked", label: "Linked Gate", value: (record) => relationTarget(record, "gate", ["links_to"]) || formatIdentifier(fact(record, "linked_gate_id", "linked_gate_placeholder")) },
       { key: "source", label: "Source", value: sourceSummary },
       { key: "updated", label: "Updated", value: (record) => field(record, "updatedAt", "createdAt") },
@@ -219,6 +222,9 @@ function formParams(cursor?: string): URLSearchParams {
     if (value) {
       params.set(key, value);
     }
+  }
+  if (activePath === "/v1/current/characters" && !params.has("profile")) {
+    params.set("profile", "known");
   }
   if (cursor) {
     params.set("cursor", cursor);
@@ -367,7 +373,7 @@ function truncate(value: string, length: number): string {
   return `${value.slice(0, Math.max(0, length - 1))}…`;
 }
 
-function gateCoordinates(record: UnknownRecord): string {
+function coordinates(record: UnknownRecord): string {
   const facts = nestedRecord(record, "facts");
   const coordinates = facts.coordinates ?? facts.position ?? record.coordinates ?? record.position;
   if (Array.isArray(coordinates) && coordinates.length >= 3) {
