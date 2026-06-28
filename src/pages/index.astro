@@ -62,10 +62,13 @@ import { collectionCards, explorerRoutes } from "../config/site";
                   class="route-tab"
                   type="button"
                   data-route-tab={route.path}
+                  data-route-kind={route.kind}
+                  data-route-label={route.label}
                   aria-pressed={index === 1 ? "true" : "false"}
                 >
-                  <span>{route.kind}</span>
-                  {route.label}
+                  <span class="route-tab__kind">{route.kind}</span>
+                  <strong class="route-tab__label">{route.label}</strong>
+                  <small class="route-tab__count" data-route-count-key={route.countKey}>...</small>
                 </button>
               ))
             }

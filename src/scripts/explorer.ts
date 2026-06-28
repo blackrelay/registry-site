@@ -36,6 +36,7 @@ const pageList = document.querySelector<HTMLElement>("[data-page-list]");
 const copyDetail = document.querySelector<HTMLButtonElement>("[data-copy-detail]");
 const routeTabs = [...document.querySelectorAll<HTMLButtonElement>("[data-route-tab]")];
 const countValues = [...document.querySelectorAll<HTMLElement>("[data-count-key]")];
+const routeCountValues = [...document.querySelectorAll<HTMLElement>("[data-route-count-key]")];
 const readyJSON = document.querySelector<HTMLElement>("[data-ready-json]");
 const freshnessJSON = document.querySelector<HTMLElement>("[data-freshness-json]");
 
@@ -44,6 +45,7 @@ let activeBaseParams = new URLSearchParams();
 let activeDetailJSON = "";
 let activePageIndex = 0;
 let activePages: PageState[] = [];
+let metricValues = new Map<string, number>();
 
 const responseCache = new Map<string, ApiEnvelope<unknown[]>>();
 
@@ -296,7 +298,7 @@ function recordTitle(record: UnknownRecord): string {
       entity.slug,
       record.id,
     ) || "Unnamed record";
-  return formatDisplayText(title);
+  return formatDisplayText(formatIdentifier(title));
 }
 
 function recordType(record: UnknownRecord): string {
@@ -342,15 +344,23 @@ function formatIdentifier(value: string): string {
       value = value.slice("type:".length);
     }
   }
-  return compactLongHex(value);
+  return stripWrappingNameQuotes(compactLongHex(value));
 }
 
 function formatDisplayText(value: string): string {
-  value = value.trim();
+  value = stripWrappingNameQuotes(value.trim());
   if (!value) {
     return "";
   }
   return value.replace(/\b(Gate|Assembly|Storage|Turret|Route)\s+(0x[0-9a-fA-F]{16,})\b/g, (_match, label: string, id: string) => `${label} ${compactLongHex(id)}`);
+}
+
+function stripWrappingNameQuotes(value: string): string {
+  let out = value.trim();
+  while ((out.startsWith("'") && out.endsWith("'")) || (out.startsWith("’") && out.endsWith("’"))) {
+    out = out.slice(1, -1).trim();
+  }
+  return out;
 }
 
 function compactLongHex(value: string): string {
@@ -410,7 +420,8 @@ function renderRecords(records: unknown[], append = false): void {
   if (!append) {
     results.innerHTML = "";
   }
-  resultsSummary.textContent = `${records.length} record${records.length === 1 ? "" : "s"} on page ${activePageIndex + 1} from ${activePath}.`;
+  const total = activeRouteTotal();
+  resultsSummary.textContent = `${records.length} record${records.length === 1 ? "" : "s"} on page ${activePageIndex + 1} from ${activePath}${total === "" ? "" : `; ${total} total`}.`;
   if (records.length === 0 && !append) {
     results.innerHTML = `<tr><td colspan="${columns.length}">No records matched this query.</td></tr>`;
     return;
@@ -500,7 +511,13 @@ function syncRouteControls(path: string): void {
   }
   if (activeRouteLabel) {
     const matchingTab = routeTabs.find((tab) => tab.dataset.routeTab === path);
-    activeRouteLabel.textContent = matchingTab?.textContent?.trim().replace(/\s+/g, " ").toUpperCase() ?? path.toUpperCase();
+    if (matchingTab) {
+      const kind = matchingTab.dataset.routeKind?.trim().toUpperCase() ?? "";
+      const label = matchingTab.dataset.routeLabel?.trim().toUpperCase() ?? "";
+      activeRouteLabel.textContent = [kind, label].filter(Boolean).join(" ");
+    } else {
+      activeRouteLabel.textContent = path.toUpperCase();
+    }
   }
 }
 
@@ -603,6 +620,13 @@ function setDetail(value: unknown): void {
   }
 }
 
+function activeRouteTotal(): string {
+  const matchingTab = routeTabs.find((tab) => tab.dataset.routeTab === activePath);
+  const key = matchingTab?.querySelector<HTMLElement>("[data-route-count-key]")?.dataset.routeCountKey;
+  const value = key ? metricValues.get(key) : undefined;
+  return value === undefined ? "" : formatCount(value);
+}
+
 function escapeHTML(value: string): string {
   return value.replace(/[&<>"']/g, (char) => {
     const entities: Record<string, string> = {
@@ -639,19 +663,27 @@ async function loadOperations(): Promise<void> {
 }
 
 async function loadCounts(): Promise<void> {
-  if (countValues.length === 0) {
+  if (countValues.length === 0 && routeCountValues.length === 0) {
     return;
   }
 
   try {
-    const metrics = parseMetrics(await fetchText("/v1/metrics"));
+    metricValues = parseMetrics(await fetchText("/v1/metrics"));
     for (const target of countValues) {
       const key = target.dataset.countKey;
-      const value = key ? metrics.get(key) : undefined;
+      const value = key ? metricValues.get(key) : undefined;
+      target.textContent = value === undefined ? "..." : formatCount(value);
+    }
+    for (const target of routeCountValues) {
+      const key = target.dataset.routeCountKey;
+      const value = key ? metricValues.get(key) : undefined;
       target.textContent = value === undefined ? "..." : formatCount(value);
     }
   } catch {
     for (const target of countValues) {
+      target.textContent = "unavailable";
+    }
+    for (const target of routeCountValues) {
       target.textContent = "unavailable";
     }
   }

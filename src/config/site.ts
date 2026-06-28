@@ -21,22 +21,20 @@ export const navItems = [
 ] as const;
 
 export const explorerRoutes = [
-  { label: "All Entities", path: "/v1/search", kind: "entity" },
-  { label: "Characters", path: "/v1/current/characters", kind: "entity" },
-  { label: "Tribes", path: "/v1/current/tribes", kind: "entity" },
-  { label: "Systems", path: "/v1/current/systems", kind: "entity" },
-  { label: "Regions", path: "/v1/current/regions", kind: "entity" },
-  { label: "Constellations", path: "/v1/current/constellations", kind: "entity" },
-  { label: "Assemblies", path: "/v1/current/assemblies", kind: "entity" },
-  { label: "Gates", path: "/v1/current/gates", kind: "entity" },
-  { label: "Items", path: "/v1/current/items", kind: "entity" },
-  { label: "Materials", path: "/v1/current/materials", kind: "entity" },
-  { label: "Enemies", path: "/v1/current/enemies", kind: "entity" },
-  { label: "Recipes", path: "/v1/current/recipes", kind: "entity" },
-  { label: "Blueprints", path: "/v1/current/blueprints", kind: "entity" },
-  { label: "Events", path: "/v1/events", kind: "event" },
-  { label: "Killmails", path: "/v1/killmails", kind: "killmail" },
-  { label: "Sources", path: "/v1/sources", kind: "source" },
+  { label: "All Entities", path: "/v1/search", kind: "entity", countKey: "entities" },
+  { label: "Characters", path: "/v1/current/characters", kind: "entity", countKey: "current_characters" },
+  { label: "Tribes", path: "/v1/current/tribes", kind: "entity", countKey: "current_tribes" },
+  { label: "Systems", path: "/v1/current/systems", kind: "entity", countKey: "current_systems" },
+  { label: "Assemblies", path: "/v1/current/assemblies", kind: "entity", countKey: "current_assemblies" },
+  { label: "Gates", path: "/v1/current/gates", kind: "entity", countKey: "current_gates" },
+  { label: "Items", path: "/v1/current/items", kind: "entity", countKey: "current_items" },
+  { label: "Materials", path: "/v1/current/materials", kind: "entity", countKey: "current_materials" },
+  { label: "Enemies", path: "/v1/current/enemies", kind: "entity", countKey: "current_enemies" },
+  { label: "Recipes", path: "/v1/current/recipes", kind: "entity", countKey: "current_recipes" },
+  { label: "Blueprints", path: "/v1/current/blueprints", kind: "entity", countKey: "current_blueprints" },
+  { label: "Events", path: "/v1/events", kind: "event", countKey: "events" },
+  { label: "Killmails", path: "/v1/killmails", kind: "killmail", countKey: "killmails" },
+  { label: "Sources", path: "/v1/sources", kind: "source", countKey: "sources" },
 ] as const;
 
 export const collectionCards = [

@@ -827,6 +827,7 @@ pre {
 
 .route-tab {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   flex: 0 0 auto;
   min-width: 8.8rem;
   gap: 0.2rem;
@@ -842,10 +843,28 @@ pre {
   text-transform: uppercase;
 }
 
-.route-tab span {
+.route-tab__kind {
+  grid-column: 1 / -1;
   color: var(--text-dim);
   font-size: 0.58rem;
   letter-spacing: 0.14em;
+}
+
+.route-tab__label {
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+}
+
+.route-tab__count {
+  align-self: end;
+  color: var(--text-dim);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-align: right;
 }
 
 .route-tab[aria-pressed="true"] {
@@ -854,7 +873,8 @@ pre {
   color: var(--frontier-orange);
 }
 
-.route-tab[aria-pressed="true"] span {
+.route-tab[aria-pressed="true"] .route-tab__kind,
+.route-tab[aria-pressed="true"] .route-tab__count {
   color: var(--text-primary);
 }
 
