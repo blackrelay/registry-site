@@ -74,7 +74,7 @@ const columnSets: Array<[RegExp, Column[]]> = [
     /tribes/,
     [
       { key: "name", label: "Tribe", value: recordTitle, className: "cell-strong" },
-      { key: "id", label: "Tribe ID", value: (record) => fact(record, "tribe_id", "item_id") || recordId(record) },
+      { key: "id", label: "Tribe ID", value: (record) => formatIdentifier(fact(record, "tribe_id", "item_id") || recordId(record)) },
       { key: "tag", label: "Tag", value: (record) => fact(record, "tag", "ticker") },
       { key: "url", label: "URL", value: (record) => fact(record, "url", "profile_url") },
       { key: "source", label: "Source", value: sourceSummary },
@@ -219,6 +219,9 @@ function formParams(cursor?: string): URLSearchParams {
   const data = new FormData(form);
   for (const key of ["q", "cycles", "environment", "limit"]) {
     const value = String(data.get(key) ?? "").trim();
+    if (key === "cycles" && value === "current") {
+      continue;
+    }
     if (value) {
       params.set(key, value);
     }
@@ -402,7 +405,7 @@ function formatIdentifier(value: string): string {
   if (!value) {
     return "";
   }
-  const entityPrefix = /^(character|tribe|assembly|gate|storage|turret|system|region|constellation|item|material|recipe|blueprint|ship|structure|enemy|site|route):([^:]+):(.+)$/;
+  const entityPrefix = /^(character|tribe|assembly|gate|storage|turret|system|region|constellation|item|material|recipe|blueprint|ship|structure|enemy|site|route|killmail):([^:]+):(.+)$/;
   const match = entityPrefix.exec(value);
   if (match) {
     value = match[3] ?? value;
