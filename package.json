@@ -15,7 +15,7 @@
     "lint": "astro check",
     "format": "prettier --write .",
     "pages:dev": "wrangler pages dev ./dist",
-    "pages:deploy": "wrangler pages deploy ./dist --project-name blackrelay-registry"
+    "pages:deploy": "wrangler pages deploy ./dist --project-name blackrelay-registry-site"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",
