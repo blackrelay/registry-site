@@ -76,7 +76,7 @@ const columnSets: Array<[RegExp, Column[]]> = [
   [
     /tribes/,
     [
-      { key: "name", label: "Tribe", value: tribeTitle, className: "cell-strong" },
+      { key: "name", label: "Tribe", value: recordTitle, className: "cell-strong" },
       { key: "id", label: "Tribe ID", value: (record) => formatIdentifier(fact(record, "tribe_id", "item_id") || recordId(record)) },
       { key: "tag", label: "Tag", value: (record) => fact(record, "tag", "ticker") },
       { key: "url", label: "URL", value: (record) => fact(record, "url", "profile_url") },
@@ -406,18 +406,6 @@ function recordTitle(record: UnknownRecord): string {
       record.id,
     ) || "Unnamed record";
   return formatDisplayText(formatIdentifier(title));
-}
-
-function tribeTitle(record: UnknownRecord): string {
-  const title = recordTitle(record);
-  const tag = fact(record, "tag", "ticker");
-  if (!tag || !title) {
-    return title;
-  }
-  if (title.toLowerCase().startsWith(`${tag.toLowerCase()} `)) {
-    return title;
-  }
-  return `${tag} ${title}`;
 }
 
 function recordType(record: UnknownRecord): string {
