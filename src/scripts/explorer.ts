@@ -870,33 +870,34 @@ async function loadOperations(): Promise<void> {
     ["/v1/ops/freshness", freshnessJSON],
   ] as const;
 
-  await Promise.all(
-    targets.map(async ([path, target]) => {
-      try {
-        const body = path === "/v1/ready" ? await fetchReadyEnvelope() : await fetchEnvelope<unknown>(path);
-        if (target) {
-          target.textContent = JSON.stringify(body.data ?? body, null, 2);
-        }
-        if (path === "/v1/ops/freshness") {
-          renderFreshnessSummary(body.data);
-        }
-        if (path === "/v1/ready") {
-          if (readyPayloadLooksHealthy(body)) {
-            setApiStatus("ONLINE", "good");
-          } else {
-            setApiStatus("SERVICE BAD", "warn", "The API responded, but readiness was not healthy.");
-          }
-        }
-      } catch (error) {
-        if (target) {
-          target.textContent = error instanceof Error ? error.message : String(error);
-        }
-        if (path === "/v1/ready") {
-          setApiStatus("OFFLINE", "bad", error instanceof Error ? error.message : String(error));
+  for (const [index, [path, target]] of targets.entries()) {
+    if (index > 0) {
+      await delay(180);
+    }
+    try {
+      const body = path === "/v1/ready" ? await fetchReadyEnvelope() : await fetchEnvelope<unknown>(path);
+      if (target) {
+        target.textContent = JSON.stringify(body.data ?? body, null, 2);
+      }
+      if (path === "/v1/ops/freshness") {
+        renderFreshnessSummary(body.data);
+      }
+      if (path === "/v1/ready") {
+        if (readyPayloadLooksHealthy(body)) {
+          setApiStatus("ONLINE", "good");
+        } else {
+          setApiStatus("SERVICE BAD", "warn", "The API responded, but readiness was not healthy.");
         }
       }
-    }),
-  );
+    } catch (error) {
+      if (target) {
+        target.textContent = error instanceof Error ? error.message : String(error);
+      }
+      if (path === "/v1/ready") {
+        setApiStatus("OFFLINE", "bad", error instanceof Error ? error.message : String(error));
+      }
+    }
+  }
 }
 
 function renderFreshnessSummary(value: unknown): void {
@@ -1023,10 +1024,19 @@ for (const shortcut of document.querySelectorAll<HTMLButtonElement>("[data-route
 }
 
 syncRouteControls(activePath);
-void loadApiStatus();
-void loadCounts();
-void startQuery().finally(() => {
+void startQuery();
+deferApiTask(loadApiStatus, 180);
+deferApiTask(loadCounts, 420);
+deferApiTask(loadOperations, 760);
+
+function deferApiTask(task: () => Promise<void>, delayMs: number): void {
   window.setTimeout(() => {
-    void loadOperations();
-  }, 250);
-});
+    void task();
+  }, delayMs);
+}
+
+function delay(delayMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, delayMs);
+  });
+}
