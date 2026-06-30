@@ -12,14 +12,50 @@ import { collectionCards, explorerRoutes } from "../config/site";
     <section class="registry-shell" id="search" aria-labelledby="registry-title">
       <div class="registry-topline">
         <div>
-          <p class="terminal-label">PUBLIC REGISTRY TERMINAL</p>
-          <h1 id="registry-title">Explore Registry Data</h1>
+          <p class="terminal-label">Public Registry</p>
+          <h1 id="registry-title">Search public Frontier records</h1>
+          <p class="registry-intro">
+            Public Sui events, World API metadata and static client data normalised into
+            source-labelled records. Check source, cycle and timestamp before relying on a result.
+          </p>
         </div>
         <aside class="registry-status" aria-label="API status summary">
           <StatusPill label="API" value="CHECKING" tone="warn" statusKey="api" />
           <StatusPill label="ENV" value="STILLNESS" />
           <StatusPill label="CYCLE" value="6" />
         </aside>
+      </div>
+
+      <div class="trust-strip" aria-label="Registry trust boundaries">
+        <p>
+          Black Relay indexes public or source-labelled data only. It does not publish private
+          Discord intel, real-world identity claims, wallet secrets or unverifiable alt
+          accusations.
+        </p>
+        <p>
+          The API is a public read layer, not transaction authority. Re-read live state through
+          direct Frontier and Sui tooling before signing, sponsoring, deploying or mutating
+          anything.
+        </p>
+      </div>
+
+      <div class="freshness-strip" aria-label="Data freshness summary">
+        <span>
+          <strong>Data freshness</strong>
+          <small data-freshness-state>Checking</small>
+        </span>
+        <span>
+          <strong>Last export</strong>
+          <small data-last-export>Checking</small>
+        </span>
+        <span>
+          <strong>Stale sources</strong>
+          <small data-stale-count>Checking</small>
+        </span>
+        <span>
+          <strong>Oldest stale source</strong>
+          <small data-oldest-stale>Checking</small>
+        </span>
       </div>
 
       <div class="count-strip" aria-label="Registry totals from API metrics">
@@ -64,7 +100,7 @@ import { collectionCards, explorerRoutes } from "../config/site";
                   data-route-tab={route.path}
                   data-route-kind={route.kind}
                   data-route-label={route.label}
-                  aria-pressed={index === 1 ? "true" : "false"}
+                  aria-pressed={index === 0 ? "true" : "false"}
                 >
                   <span class="route-tab__kind">{route.kind}</span>
                   <strong class="route-tab__label">{route.label}</strong>
@@ -82,7 +118,7 @@ import { collectionCards, explorerRoutes } from "../config/site";
               <select name="route">
                 {
                   explorerRoutes.map((route) => (
-                    <option value={route.path} selected={route.path === "/v1/current/characters"}>
+                    <option value={route.path} selected={route.path === "/v1/search"}>
                       {route.label}
                     </option>
                   ))
@@ -113,8 +149,12 @@ import { collectionCards, explorerRoutes } from "../config/site";
 
           <div class="result-toolbar">
             <div>
-              <span class="terminal-label" data-active-route>CHARACTERS</span>
-              <p data-results-summary>Loading current character records...</p>
+              <span class="terminal-label" data-active-route>ENTITY ALL ENTITIES</span>
+              <p data-route-warning class="route-warning">
+                Frontier data can change after patches or cycle resets. Check source, cycle and
+                timestamp before relying on a record.
+              </p>
+              <p data-results-summary>Loading public records...</p>
             </div>
             <nav class="page-navigator" data-pagination hidden aria-label="Result pages">
               <button class="plain-button page-button" type="button" data-page-first>First</button>
@@ -134,11 +174,12 @@ import { collectionCards, explorerRoutes } from "../config/site";
                   <th>Cycle</th>
                   <th>Source</th>
                   <th>Updated</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody data-results>
                 <tr>
-                  <td colspan="6">Loading records...</td>
+                  <td colspan="7">Loading records...</td>
                 </tr>
               </tbody>
             </table>
@@ -158,7 +199,7 @@ import { collectionCards, explorerRoutes } from "../config/site";
     <section class="section ops-section" id="ops" aria-labelledby="ops-title">
       <div class="section-head">
         <span class="section-number">02 //</span>
-        <h2 class="section-title" id="ops-title">OPS://FRESHNESS</h2>
+        <h2 class="section-title" id="ops-title">Operations and freshness</h2>
       </div>
       <div class="collection-grid" id="collections" aria-label="Current collection shortcuts">
         {

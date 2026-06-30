@@ -41,8 +41,13 @@ const readyJSON = document.querySelector<HTMLElement>("[data-ready-json]");
 const freshnessJSON = document.querySelector<HTMLElement>("[data-freshness-json]");
 const apiStatusPill = document.querySelector<HTMLElement>('[data-status-key="api"]');
 const apiStatusValue = document.querySelector<HTMLElement>('[data-status-value="api"]');
+const routeWarning = document.querySelector<HTMLElement>("[data-route-warning]");
+const freshnessState = document.querySelector<HTMLElement>("[data-freshness-state]");
+const lastExport = document.querySelector<HTMLElement>("[data-last-export]");
+const staleCount = document.querySelector<HTMLElement>("[data-stale-count]");
+const oldestStale = document.querySelector<HTMLElement>("[data-oldest-stale]");
 
-let activePath = "/v1/current/characters";
+let activePath = "/v1/search";
 let activeBaseParams = new URLSearchParams();
 let activeDetailJSON = "";
 let activePageIndex = 0;
@@ -51,6 +56,18 @@ let metricValues = new Map<string, number>();
 let readyEnvelopePromise: Promise<ApiEnvelope<unknown>> | undefined;
 
 const responseCache = new Map<string, ApiEnvelope<unknown[]>>();
+
+const routeWarnings: Array<[RegExp, string]> = [
+  [
+    /characters/,
+    "Public chain-derived records. Do not treat address, tribe or name data as identity proof without checking source and timestamp.",
+  ],
+  [/killmails/, "Coverage depends on indexed sources and may be stale or incomplete."],
+  [
+    /types|items|materials|enemies|recipes|blueprints|ships|structures|systems|regions|constellations/,
+    "Static client-derived records may change after patches.",
+  ],
+];
 
 const defaultColumns: Column[] = [
   { key: "name", label: "Name", value: recordTitle, className: "cell-strong" },
@@ -525,7 +542,7 @@ function renderError(message: string): void {
     resultsSummary.textContent = message;
   }
   if (results) {
-    results.innerHTML = `<tr><td colspan="${columnsForPath(activePath).length}">${escapeHTML(message)}</td></tr>`;
+    results.innerHTML = `<tr><td colspan="${columnsForPath(activePath).length + 1}">${escapeHTML(message)}</td></tr>`;
   }
   if (pagination) {
     pagination.hidden = true;
@@ -536,7 +553,7 @@ function renderHead(columns: Column[]): void {
   if (!resultsHead) {
     return;
   }
-  resultsHead.innerHTML = `<tr>${columns.map((column) => `<th>${escapeHTML(column.label)}</th>`).join("")}</tr>`;
+  resultsHead.innerHTML = `<tr>${columns.map((column) => `<th>${escapeHTML(column.label)}</th>`).join("")}<th>Actions</th></tr>`;
 }
 
 function renderRecords(records: unknown[], append = false): void {
@@ -551,7 +568,7 @@ function renderRecords(records: unknown[], append = false): void {
   const total = activeRouteTotal();
   resultsSummary.textContent = `${records.length} record${records.length === 1 ? "" : "s"} on page ${activePageIndex + 1} from ${activePath}${total === "" ? "" : `; ${total} total`}.`;
   if (records.length === 0 && !append) {
-    results.innerHTML = `<tr><td colspan="${columns.length}">No records matched this query.</td></tr>`;
+    results.innerHTML = `<tr><td colspan="${columns.length + 1}">No records matched this query.</td></tr>`;
     return;
   }
   const fragment = document.createDocumentFragment();
@@ -561,12 +578,16 @@ function renderRecords(records: unknown[], append = false): void {
     row.tabIndex = 0;
     row.dataset.recordId = recordId(record);
     row.dataset.recordType = recordType(record);
-    row.innerHTML = columns
+    row.innerHTML = `${columns
       .map((column) => {
         const className = column.className ? ` class="${column.className}"` : "";
         return `<td${className}>${escapeHTML(column.value(record) || "—")}</td>`;
       })
-      .join("");
+      .join("")}<td class="cell-actions"></td>`;
+    const actionsCell = row.querySelector<HTMLElement>(".cell-actions");
+    if (actionsCell) {
+      actionsCell.append(renderRowActions(record));
+    }
     row.addEventListener("click", () => showDetail(record));
     row.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
@@ -651,6 +672,11 @@ function syncRouteControls(path: string): void {
       activeRouteLabel.textContent = path.toUpperCase();
     }
   }
+  if (routeWarning) {
+    routeWarning.textContent =
+      routeWarnings.find(([pattern]) => pattern.test(path))?.[1] ??
+      "Frontier data can change after patches or cycle resets. Check source, cycle and timestamp before relying on a record.";
+  }
 }
 
 async function startQuery(): Promise<void> {
@@ -658,7 +684,7 @@ async function startQuery(): Promise<void> {
     return;
   }
   const data = new FormData(form);
-  activePath = String(data.get("route") ?? "/v1/current/characters");
+  activePath = String(data.get("route") ?? "/v1/search");
   activeBaseParams = formParams();
   activePageIndex = 0;
   activePages = [];
@@ -742,6 +768,72 @@ async function showDetail(record: UnknownRecord): Promise<void> {
   }
 }
 
+function renderRowActions(record: UnknownRecord): HTMLElement {
+  const wrap = document.createElement("div");
+  wrap.className = "row-actions";
+  const id = recordId(record);
+  const apiURL = detailApiPath(record);
+  const actions: Array<[string, () => void | Promise<void>]> = [
+    ["View", () => showDetail(record)],
+    ["Copy ID", () => copyText(id)],
+    ["Copy API URL", () => copyText(apiURL ? endpoint(apiURL) : endpoint(activePath, activeBaseParams))],
+    ["View JSON", () => setDetail(record)],
+    ["View sources", () => showSources(record)],
+  ];
+
+  for (const [label, action] of actions) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "plain-button row-action";
+    button.textContent = label;
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      void action();
+    });
+    wrap.append(button);
+  }
+  return wrap;
+}
+
+function detailApiPath(record: UnknownRecord): string {
+  const id = recordId(record);
+  const type = recordType(record);
+  if (!id) {
+    return "";
+  }
+  if (activePath.includes("/events")) {
+    return `/v1/events/${encodeURIComponent(id)}`;
+  }
+  if (activePath.includes("/killmails")) {
+    return `/v1/killmails/${encodeURIComponent(id)}`;
+  }
+  if (activePath.includes("/sources")) {
+    return `/v1/sources/${encodeURIComponent(id)}`;
+  }
+  if (type !== "document") {
+    return `/v1/entities/${encodeURIComponent(id)}`;
+  }
+  return "";
+}
+
+async function copyText(value: string): Promise<void> {
+  if (!value) {
+    return;
+  }
+  await navigator.clipboard.writeText(value);
+}
+
+function showSources(record: UnknownRecord): void {
+  const sourcePayload = {
+    id: recordId(record),
+    sourceIds: record.sourceIds ?? [],
+    sources: record.sources ?? [],
+    outgoingRelations: record.outgoingRelations ?? [],
+    incomingRelations: record.incomingRelations ?? [],
+  };
+  setDetail(sourcePayload);
+}
+
 function setDetail(value: unknown): void {
   activeDetailJSON = JSON.stringify(value, null, 2);
   if (detail) {
@@ -785,6 +877,9 @@ async function loadOperations(): Promise<void> {
         if (target) {
           target.textContent = JSON.stringify(body.data ?? body, null, 2);
         }
+        if (path === "/v1/ops/freshness") {
+          renderFreshnessSummary(body.data);
+        }
         if (path === "/v1/ready") {
           if (readyPayloadLooksHealthy(body)) {
             setApiStatus("ONLINE", "good");
@@ -802,6 +897,42 @@ async function loadOperations(): Promise<void> {
       }
     }),
   );
+}
+
+function renderFreshnessSummary(value: unknown): void {
+  const rows = Array.isArray(value) ? value.map(asRecord) : [];
+  const staleRows = rows.filter((row) => firstString(row.stalenessStatus) !== "live_indexed");
+  const updatedValues = rows
+    .map((row) => Date.parse(firstString(row.updatedAt, row.lastSuccessfulIngest)))
+    .filter(Number.isFinite);
+  const staleValues = staleRows
+    .map((row) => ({
+      source: firstString(row.source) || "unknown",
+      time: Date.parse(firstString(row.lastSuccessfulIngest, row.updatedAt)),
+    }))
+    .filter((row) => Number.isFinite(row.time))
+    .sort((a, b) => a.time - b.time);
+
+  if (freshnessState) {
+    freshnessState.textContent = rows.length === 0 ? "Not reported" : staleRows.length > 0 ? "Mixed" : "Live indexed";
+  }
+  if (lastExport) {
+    const latest = updatedValues.length > 0 ? new Date(Math.max(...updatedValues)).toISOString() : "";
+    lastExport.textContent = latest || "Not reported";
+  }
+  if (staleCount) {
+    staleCount.textContent = String(staleRows.length);
+  }
+  if (oldestStale) {
+    oldestStale.textContent = staleValues[0] ? `${compactSource(staleValues[0].source)} // ${new Date(staleValues[0].time).toISOString()}` : "None reported";
+  }
+}
+
+function compactSource(value: string): string {
+  if (value.length <= 48) {
+    return value;
+  }
+  return `${value.slice(0, 21)}…${value.slice(-22)}`;
 }
 
 async function loadCounts(): Promise<void> {

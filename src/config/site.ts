@@ -3,7 +3,7 @@ export const siteConfig = {
   domain: "registry.blackrelay.network",
   apiBase: import.meta.env.PUBLIC_REGISTRY_API_BASE ?? "https://api.blackrelay.network",
   description:
-    "A source-aware public explorer for Black Relay Registry data, provenance, events and operations state.",
+    "Search public EVE Frontier records from Black Relay Registry exports, with source, confidence and freshness context.",
   endpoints: {
     home: "https://blackrelay.network",
     api: "https://api.blackrelay.network",
@@ -17,8 +17,8 @@ export const navItems = [
   { label: "HOME", href: siteConfig.endpoints.home },
   { label: "SEARCH", href: "#search" },
   { label: "COLLECTIONS", href: "#collections" },
-  { label: "OPS", href: "#ops" },
-  { label: "DEV DOCS", href: siteConfig.endpoints.docs },
+  { label: "FRESHNESS", href: "#ops" },
+  { label: "DOCS", href: siteConfig.endpoints.docs },
 ] as const;
 
 export const explorerRoutes = [
@@ -39,14 +39,15 @@ export const explorerRoutes = [
 ] as const;
 
 export const collectionCards = [
+  ["Systems", "/v1/current/systems", "Static-client system records and route context."],
+  ["Items", "/v1/current/items", "Static-client item and type records where published."],
+  ["Sources", "/v1/sources", "Sources, snapshots and evidence links."],
+  ["Events", "/v1/events", "On-chain event rows indexed from Registry exports."],
+  ["Killmails", "/v1/killmails", "Semantic combat records with raw evidence where available."],
   ["Characters", "/v1/current/characters", "Public character records, activity and tribe evidence."],
   ["Tribes", "/v1/current/tribes", "Public tribe identity and profile evidence where available."],
-  ["Systems", "/v1/current/systems", "Static-client system records and route context."],
   ["Regions", "/v1/current/regions", "Static-client region records when published by the Registry."],
   ["Constellations", "/v1/current/constellations", "Static-client constellation records when published by the Registry."],
   ["Assemblies", "/v1/current/assemblies", "Smart Assembly and infrastructure records."],
   ["Gates", "/v1/current/gates", "Public gate records and route evidence."],
-  ["Killmails", "/v1/killmails", "Semantic combat records with raw evidence where available."],
-  ["Events", "/v1/events", "On-chain event rows indexed from Registry exports."],
-  ["Sources", "/v1/sources", "Sources, snapshots and evidence links."],
 ] as const;
