@@ -28,12 +28,16 @@ const resultsHead = document.querySelector<HTMLTableSectionElement>("[data-resul
 const resultsSummary = document.querySelector<HTMLElement>("[data-results-summary]");
 const activeRouteLabel = document.querySelector<HTMLElement>("[data-active-route]");
 const detail = document.querySelector<HTMLElement>("[data-detail]");
+const detailState = document.querySelector<HTMLElement>("[data-detail-state]");
 const pagination = document.querySelector<HTMLElement>("[data-pagination]");
 const pageFirst = document.querySelector<HTMLButtonElement>("[data-page-first]");
 const pagePrev = document.querySelector<HTMLButtonElement>("[data-page-prev]");
 const pageNext = document.querySelector<HTMLButtonElement>("[data-page-next]");
 const pageList = document.querySelector<HTMLElement>("[data-page-list]");
 const copyDetail = document.querySelector<HTMLButtonElement>("[data-copy-detail]");
+const copyRecordId = document.querySelector<HTMLButtonElement>("[data-copy-record-id]");
+const copyRecordUrl = document.querySelector<HTMLButtonElement>("[data-copy-record-url]");
+const viewRecordSources = document.querySelector<HTMLButtonElement>("[data-view-record-sources]");
 const routeTabs = [...document.querySelectorAll<HTMLButtonElement>("[data-route-tab]")];
 const countValues = [...document.querySelectorAll<HTMLElement>("[data-count-key]")];
 const routeCountValues = [...document.querySelectorAll<HTMLElement>("[data-route-count-key]")];
@@ -54,6 +58,9 @@ let activePageIndex = 0;
 let activePages: PageState[] = [];
 let metricValues = new Map<string, number>();
 let readyEnvelopePromise: Promise<ApiEnvelope<unknown>> | undefined;
+let selectedRecord: UnknownRecord | undefined;
+let selectedRecordApiPath = "";
+let selectedRecordKey = "";
 
 const responseCache = new Map<string, ApiEnvelope<unknown[]>>();
 
@@ -542,7 +549,7 @@ function renderError(message: string): void {
     resultsSummary.textContent = message;
   }
   if (results) {
-    results.innerHTML = `<tr><td colspan="${columnsForPath(activePath).length + 1}">${escapeHTML(message)}</td></tr>`;
+    results.innerHTML = `<tr><td colspan="${columnsForPath(activePath).length}">${escapeHTML(message)}</td></tr>`;
   }
   if (pagination) {
     pagination.hidden = true;
@@ -553,7 +560,7 @@ function renderHead(columns: Column[]): void {
   if (!resultsHead) {
     return;
   }
-  resultsHead.innerHTML = `<tr>${columns.map((column) => `<th>${escapeHTML(column.label)}</th>`).join("")}<th>Actions</th></tr>`;
+  resultsHead.innerHTML = `<tr>${columns.map((column) => `<th>${escapeHTML(column.label)}</th>`).join("")}</tr>`;
 }
 
 function renderRecords(records: unknown[], append = false): void {
@@ -568,31 +575,35 @@ function renderRecords(records: unknown[], append = false): void {
   const total = activeRouteTotal();
   resultsSummary.textContent = `${records.length} record${records.length === 1 ? "" : "s"} on page ${activePageIndex + 1} from ${activePath}${total === "" ? "" : `; ${total} total`}.`;
   if (records.length === 0 && !append) {
-    results.innerHTML = `<tr><td colspan="${columns.length + 1}">No records matched this query.</td></tr>`;
+    results.innerHTML = `<tr><td colspan="${columns.length}">No records matched this query.</td></tr>`;
     return;
   }
   const fragment = document.createDocumentFragment();
   for (const value of records) {
     const record = asRecord(value);
     const row = document.createElement("tr");
+    const key = selectionKey(record);
     row.tabIndex = 0;
     row.dataset.recordId = recordId(record);
+    row.dataset.recordKey = key;
     row.dataset.recordType = recordType(record);
-    row.innerHTML = `${columns
+    row.title = "Select record";
+    row.setAttribute("aria-label", `Select ${recordTitle(record)}`);
+    row.setAttribute("aria-selected", selectedRecordKey === key ? "true" : "false");
+    if (selectedRecordKey === key) {
+      row.classList.add("is-selected");
+    }
+    row.innerHTML = columns
       .map((column) => {
         const className = column.className ? ` class="${column.className}"` : "";
         return `<td${className}>${escapeHTML(column.value(record) || "—")}</td>`;
       })
-      .join("")}<td class="cell-actions"></td>`;
-    const actionsCell = row.querySelector<HTMLElement>(".cell-actions");
-    if (actionsCell) {
-      actionsCell.append(renderRowActions(record));
-    }
-    row.addEventListener("click", () => showDetail(record));
+      .join("");
+    row.addEventListener("click", () => toggleDetail(record));
     row.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        showDetail(record);
+        toggleDetail(record);
       }
     });
     fragment.append(row);
@@ -688,6 +699,18 @@ async function startQuery(): Promise<void> {
   activeBaseParams = formParams();
   activePageIndex = 0;
   activePages = [];
+  selectedRecord = undefined;
+  selectedRecordApiPath = "";
+  selectedRecordKey = "";
+  updateDetailActions();
+  updateDetailPanelState();
+  markSelectedRow();
+  if (copyDetail) {
+    copyDetail.hidden = true;
+  }
+  if (detail) {
+    detail.textContent = "Select a row to inspect source-backed fields.";
+  }
   syncRouteControls(activePath);
   if (resultsSummary) {
     resultsSummary.textContent = "Loading records...";
@@ -735,6 +758,13 @@ async function goToNextPage(): Promise<void> {
 }
 
 async function showDetail(record: UnknownRecord): Promise<void> {
+  const key = selectionKey(record);
+  selectedRecord = record;
+  selectedRecordApiPath = detailApiPath(record);
+  selectedRecordKey = key;
+  updateDetailActions();
+  updateDetailPanelState(record);
+  markSelectedRow(record);
   const id = recordId(record);
   const type = recordType(record);
   const isEvent = activePath.includes("/events");
@@ -762,37 +792,40 @@ async function showDetail(record: UnknownRecord): Promise<void> {
   }
   try {
     const body = await fetchEnvelope<unknown>(path);
+    if (selectedRecordKey !== key) {
+      return;
+    }
     setDetail(body.data ?? record);
   } catch {
+    if (selectedRecordKey !== key) {
+      return;
+    }
     setDetail(record);
   }
 }
 
-function renderRowActions(record: UnknownRecord): HTMLElement {
-  const wrap = document.createElement("div");
-  wrap.className = "row-actions";
-  const id = recordId(record);
-  const apiURL = detailApiPath(record);
-  const actions: Array<[string, () => void | Promise<void>]> = [
-    ["View", () => showDetail(record)],
-    ["Copy ID", () => copyText(id)],
-    ["Copy API URL", () => copyText(apiURL ? endpoint(apiURL) : endpoint(activePath, activeBaseParams))],
-    ["View JSON", () => setDetail(record)],
-    ["View sources", () => showSources(record)],
-  ];
-
-  for (const [label, action] of actions) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "plain-button row-action";
-    button.textContent = label;
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      void action();
-    });
-    wrap.append(button);
+function toggleDetail(record: UnknownRecord): void {
+  if (selectedRecordKey === selectionKey(record)) {
+    clearDetailSelection();
+    return;
   }
-  return wrap;
+  void showDetail(record);
+}
+
+function clearDetailSelection(): void {
+  selectedRecord = undefined;
+  selectedRecordApiPath = "";
+  selectedRecordKey = "";
+  activeDetailJSON = "";
+  updateDetailActions();
+  updateDetailPanelState();
+  markSelectedRow();
+  if (copyDetail) {
+    copyDetail.hidden = true;
+  }
+  if (detail) {
+    detail.textContent = "Select a row to inspect source-backed fields.";
+  }
 }
 
 function detailApiPath(record: UnknownRecord): string {
@@ -832,6 +865,44 @@ function showSources(record: UnknownRecord): void {
     incomingRelations: record.incomingRelations ?? [],
   };
   setDetail(sourcePayload);
+}
+
+function updateDetailActions(): void {
+  const hasRecord = Boolean(selectedRecord);
+  const hasApiPath = Boolean(selectedRecordApiPath);
+  if (copyRecordId) {
+    copyRecordId.hidden = !hasRecord;
+  }
+  if (copyRecordUrl) {
+    copyRecordUrl.hidden = !hasApiPath;
+  }
+  if (viewRecordSources) {
+    viewRecordSources.hidden = !hasRecord;
+  }
+}
+
+function updateDetailPanelState(record?: UnknownRecord): void {
+  if (detailState) {
+    detailState.textContent = record ? `Selected: ${recordTitle(record)}` : "No row selected";
+  }
+}
+
+function markSelectedRow(record?: UnknownRecord): void {
+  const key = record ? selectionKey(record) : selectedRecordKey;
+  for (const row of results?.querySelectorAll<HTMLTableRowElement>("tr[data-record-key]") ?? []) {
+    const isSelected = Boolean(key) && row.dataset.recordKey === key;
+    row.classList.toggle("is-selected", isSelected);
+    row.setAttribute("aria-selected", isSelected ? "true" : "false");
+  }
+}
+
+function selectionKey(record: UnknownRecord): string {
+  return [
+    activePath,
+    recordType(record),
+    recordId(record),
+    field(record, "updatedAt", "createdAt", "occurredAt", "timestamp"),
+  ].join("|");
 }
 
 function setDetail(value: unknown): void {
@@ -994,6 +1065,27 @@ copyDetail?.addEventListener("click", async () => {
   await navigator.clipboard.writeText(activeDetailJSON);
 });
 
+copyRecordId?.addEventListener("click", async () => {
+  if (!selectedRecord) {
+    return;
+  }
+  await copyText(recordId(selectedRecord));
+});
+
+copyRecordUrl?.addEventListener("click", async () => {
+  if (!selectedRecordApiPath) {
+    return;
+  }
+  await copyText(endpoint(selectedRecordApiPath));
+});
+
+viewRecordSources?.addEventListener("click", () => {
+  if (!selectedRecord) {
+    return;
+  }
+  showSources(selectedRecord);
+});
+
 for (const tab of routeTabs) {
   tab.addEventListener("click", () => {
     const route = tab.dataset.routeTab;
@@ -1003,21 +1095,6 @@ for (const tab of routeTabs) {
     const select = form.elements.namedItem("route");
     if (select instanceof HTMLSelectElement) {
       select.value = route;
-      void startQuery();
-    }
-  });
-}
-
-for (const shortcut of document.querySelectorAll<HTMLButtonElement>("[data-route-shortcut]")) {
-  shortcut.addEventListener("click", () => {
-    if (!form) {
-      return;
-    }
-    const route = shortcut.dataset.routeShortcut;
-    const select = form.elements.namedItem("route");
-    if (route && select instanceof HTMLSelectElement) {
-      select.value = route;
-      document.querySelector("#search")?.scrollIntoView({ behavior: "smooth", block: "start" });
       void startQuery();
     }
   });

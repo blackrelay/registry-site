@@ -3,7 +3,7 @@ import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
 import StatusPill from "../components/StatusPill.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { collectionCards, explorerRoutes } from "../config/site";
+import { explorerRoutes } from "../config/site";
 ---
 
 <BaseLayout>
@@ -11,9 +11,8 @@ import { collectionCards, explorerRoutes } from "../config/site";
   <main id="main">
     <section class="registry-shell" id="search" aria-labelledby="registry-title">
       <div class="registry-topline">
-        <div>
-          <p class="terminal-label">Black Relay Registry</p>
-          <h1 id="registry-title">Public Registry</h1>
+        <div class="registry-copy">
+          <h1 id="registry-title" class="terminal-label registry-title">Black Relay Registry</h1>
           <p class="registry-intro">
             Public Sui events, World API metadata and static client data normalised into
             source-labelled records. Check source, cycle and timestamp before relying on a result.
@@ -24,19 +23,6 @@ import { collectionCards, explorerRoutes } from "../config/site";
           <StatusPill label="ENV" value="STILLNESS" />
           <StatusPill label="CYCLE" value="6" />
         </aside>
-      </div>
-
-      <div class="trust-strip" aria-label="Registry trust boundaries">
-        <p>
-          Black Relay indexes public or source-labelled data only. It does not publish private
-          Discord intel, real-world identity claims, wallet secrets or unverifiable alt
-          accusations.
-        </p>
-        <p>
-          The API is a public read layer, not transaction authority. Re-read live state through
-          direct Frontier and Sui tooling before signing, sponsoring, deploying or mutating
-          anything.
-        </p>
       </div>
 
       <div class="freshness-strip" aria-label="Data freshness summary">
@@ -174,12 +160,11 @@ import { collectionCards, explorerRoutes } from "../config/site";
                   <th>Cycle</th>
                   <th>Source</th>
                   <th>Updated</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody data-results>
                 <tr>
-                  <td colspan="7">Loading records...</td>
+                  <td colspan="6">Loading records...</td>
                 </tr>
               </tbody>
             </table>
@@ -188,8 +173,16 @@ import { collectionCards, explorerRoutes } from "../config/site";
 
         <aside class="detail-panel" aria-live="polite">
           <div class="panel-head">
-            <span class="terminal-label">DETAIL</span>
-            <button class="plain-button" type="button" data-copy-detail hidden>Copy JSON</button>
+            <div class="detail-title">
+              <span class="terminal-label">DETAIL</span>
+              <span class="detail-state" data-detail-state>No row selected</span>
+            </div>
+            <div class="detail-actions">
+              <button class="plain-button" type="button" data-copy-record-id hidden>Copy ID</button>
+              <button class="plain-button" type="button" data-copy-record-url hidden>Copy API URL</button>
+              <button class="plain-button" type="button" data-view-record-sources hidden>View sources</button>
+              <button class="plain-button" type="button" data-copy-detail hidden>Copy JSON</button>
+            </div>
           </div>
           <pre data-detail>{`Select a row to inspect source-backed fields.`}</pre>
         </aside>
@@ -200,17 +193,6 @@ import { collectionCards, explorerRoutes } from "../config/site";
       <div class="section-head">
         <span class="section-number">02 //</span>
         <h2 class="section-title" id="ops-title">Operations and freshness</h2>
-      </div>
-      <div class="collection-grid" id="collections" aria-label="Current collection shortcuts">
-        {
-          collectionCards.map(([label, route, summary]) => (
-            <button class="collection-card terminal-record" type="button" data-route-shortcut={route}>
-              <span>{route}</span>
-              <strong>{label}</strong>
-              <p>{summary}</p>
-            </button>
-          ))
-        }
       </div>
       <div class="ops-grid">
         <article class="terminal-panel">

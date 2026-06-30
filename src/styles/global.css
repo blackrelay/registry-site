@@ -326,21 +326,8 @@ img {
     0 0 0 1px rgba(244, 241, 236, 0.02);
 }
 
-.terminal-record {
-  position: relative;
-  border-top: 1px solid var(--border-dim);
-  background: linear-gradient(
-    90deg,
-    rgba(254, 71, 0, 0.058) 0%,
-    rgba(254, 71, 0, 0.04) 62%,
-    rgba(254, 71, 0, 0.014) 100%
-  );
-}
-
 .terminal-panel::before,
-.terminal-panel::after,
-.terminal-record::before,
-.terminal-record::after {
+.terminal-panel::after {
   position: absolute;
   width: 1.15rem;
   height: 1.15rem;
@@ -349,16 +336,14 @@ img {
   border-color: rgba(254, 71, 0, 0.56);
 }
 
-.terminal-panel::before,
-.terminal-record::before {
+.terminal-panel::before {
   top: -1px;
   left: -1px;
   border-top: 1px solid;
   border-left: 1px solid;
 }
 
-.terminal-panel::after,
-.terminal-record::after {
+.terminal-panel::after {
   right: -1px;
   bottom: -1px;
   border-right: 1px solid;
@@ -538,9 +523,10 @@ input::placeholder {
 
 .panel-head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: 0.65rem 1rem;
 }
 
 .result-list {
@@ -591,41 +577,9 @@ pre {
   line-height: 1.65;
 }
 
-.collection-grid,
 .ops-grid {
   display: grid;
   gap: 1rem;
-}
-
-.collection-card {
-  display: grid;
-  gap: 0.55rem;
-  padding: 1rem;
-  color: inherit;
-  text-align: left;
-  border-inline: 0;
-  border-bottom: 0;
-}
-
-.collection-card span {
-  color: var(--frontier-orange);
-  font-family: var(--mono);
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.collection-card strong {
-  color: var(--text-primary);
-  font-family: var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.collection-card p {
-  margin: 0;
-  color: var(--text-muted);
 }
 
 .site-footer {
@@ -673,7 +627,6 @@ pre {
 }
 
 @media (min-width: 760px) {
-  .collection-grid,
   .ops-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -697,10 +650,6 @@ pre {
   .explorer-grid {
     grid-template-columns: minmax(16rem, 0.25fr) minmax(0, 0.37fr) minmax(0, 0.38fr);
   }
-
-  .collection-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
 }
 
 .registry-shell {
@@ -711,37 +660,44 @@ pre {
 
 .registry-topline {
   display: grid;
-  gap: 1rem;
-  align-items: end;
-  padding: clamp(1rem, 2.2vw, 1.5rem) 0;
+  gap: 0.85rem 1rem;
+  align-items: center;
+  padding: clamp(0.75rem, 1.8vw, 1.2rem) 0;
 }
 
-.registry-topline h1 {
-  max-width: none;
-  margin: 0.25rem 0 0;
-  color: var(--text-primary);
-  font-family: var(--mono);
-  font-size: clamp(1.8rem, 4vw, 4.5rem);
-  line-height: 0.96;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+.registry-copy {
+  display: grid;
+  align-content: center;
+  gap: 0.35rem;
+  min-height: 6.1rem;
+}
+
+.registry-title {
+  margin: 0;
+  line-height: 1;
 }
 
 .registry-intro {
-  max-width: 780px;
-  margin: 0.6rem 0 0;
+  max-width: 760px;
+  margin: 0;
   color: var(--text-muted);
-  font-size: clamp(1rem, 1.6vw, 1.16rem);
+  font-size: clamp(0.95rem, 1.15vw, 1rem);
+  line-height: 1.55;
 }
 
 .registry-status {
   display: grid;
   gap: 0.35rem;
+  align-self: center;
   padding: 0.35rem 0 0;
 }
 
 .registry-status .status-pill {
   padding: 0.35rem 0;
+}
+
+.registry-status .status-pill:last-child {
+  border-bottom: 0;
 }
 
 .count-strip {
@@ -751,24 +707,12 @@ pre {
   margin-bottom: 0.85rem;
 }
 
-.trust-strip,
 .freshness-strip {
   display: grid;
   gap: 0.65rem;
   margin-bottom: 0.85rem;
   border: 1px solid rgba(254, 71, 0, 0.16);
   background: rgba(5, 5, 5, 0.74);
-}
-
-.trust-strip {
-  padding: 0.85rem 1rem;
-}
-
-.trust-strip p {
-  max-width: 980px;
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 0.92rem;
 }
 
 .freshness-strip {
@@ -841,7 +785,15 @@ pre {
 
 .registry-workbench {
   display: grid;
-  min-height: min(820px, calc(100vh - 10rem));
+  min-height: min(780px, calc(100vh - 10rem));
+  --workbench-head-height: 2.8rem;
+  --workbench-route-row-height: 3.55rem;
+  --workbench-toolbar-height: 4.75rem;
+  --workbench-result-height: calc(
+    var(--workbench-head-height) + var(--workbench-route-row-height) + var(--workbench-route-row-height) -
+      var(--workbench-toolbar-height)
+  );
+  --workbench-sources-bottom-offset: 52.4rem;
 }
 
 .route-panel {
@@ -881,7 +833,7 @@ pre {
   flex: 0 0 auto;
   min-width: 8.8rem;
   gap: 0.2rem;
-  padding: 0.62rem 0.7rem;
+  padding: 0.58rem 0.66rem;
   border: 1px solid rgba(254, 71, 0, 0.12);
   background: rgba(0, 0, 0, 0.42);
   color: var(--text-muted);
@@ -896,7 +848,7 @@ pre {
 .route-tab__kind {
   grid-column: 1 / -1;
   color: var(--text-dim);
-  font-size: 0.58rem;
+  font-size: 0.54rem;
   letter-spacing: 0.14em;
 }
 
@@ -936,7 +888,7 @@ pre {
 .explorer-toolbar {
   display: grid;
   gap: 0.65rem;
-  padding: 0.75rem;
+  padding: 0.75rem 0.75rem 1rem;
   border-bottom: 1px solid rgba(254, 71, 0, 0.2);
   background: rgba(0, 0, 0, 0.42);
 }
@@ -1020,14 +972,16 @@ pre {
 
 .table-shell {
   overflow: auto;
-  max-height: min(680px, calc(100vh - 18rem));
+  max-height: min(640px, calc(100vh - 18rem));
+  scroll-behavior: auto;
+  scroll-padding-top: 2.05rem;
   scrollbar-color: rgba(254, 71, 0, 0.76) rgba(0, 0, 0, 0.7);
   scrollbar-width: thin;
 }
 
 .registry-table {
   width: 100%;
-  min-width: 1080px;
+  min-width: 940px;
   border-collapse: collapse;
   color: var(--text-muted);
   font-family: var(--mono);
@@ -1043,8 +997,9 @@ pre {
 
 .registry-table th,
 .registry-table td {
-  padding: 0.48rem 0.62rem;
+  padding: 0.5rem 0.7rem;
   border-bottom: 1px solid rgba(254, 71, 0, 0.12);
+  line-height: 1.35;
   text-align: left;
   vertical-align: top;
   white-space: nowrap;
@@ -1059,9 +1014,12 @@ pre {
 }
 
 .registry-table tbody tr {
+  cursor: pointer;
+  height: 2.35rem;
   transition:
     background-color 120ms ease,
-    color 120ms ease;
+    color 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .registry-table tbody tr:nth-child(2n) {
@@ -1072,7 +1030,41 @@ pre {
 .registry-table tbody tr:focus {
   background: rgba(254, 71, 0, 0.12);
   color: var(--text-primary);
+  box-shadow: inset 3px 0 0 rgba(254, 71, 0, 0.72);
   outline: none;
+}
+
+.registry-table tbody tr:hover .cell-strong,
+.registry-table tbody tr:focus .cell-strong,
+.registry-table tbody tr.is-selected .cell-strong {
+  color: var(--frontier-orange);
+}
+
+.registry-table tbody tr.is-selected {
+  background: rgba(254, 71, 0, 0.15);
+  color: var(--text-primary);
+  box-shadow:
+    inset 3px 0 0 rgba(254, 71, 0, 0.9),
+    inset 0 0 0 1px rgba(254, 71, 0, 0.2);
+}
+
+.registry-table tbody tr[data-record-id] td:first-child::before {
+  content: "";
+  display: inline-block;
+  width: 0.38rem;
+  height: 0.38rem;
+  margin-right: 0.48rem;
+  border: 1px solid rgba(254, 71, 0, 0.68);
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px rgba(254, 71, 0, 0.05);
+  vertical-align: 0.02em;
+}
+
+.registry-table tbody tr[data-record-id]:hover td:first-child::before,
+.registry-table tbody tr[data-record-id]:focus td:first-child::before,
+.registry-table tbody tr.is-selected td:first-child::before {
+  background: var(--frontier-orange);
+  box-shadow: 0 0 12px rgba(254, 71, 0, 0.42);
 }
 
 .registry-table .cell-strong {
@@ -1080,47 +1072,87 @@ pre {
   font-weight: 800;
 }
 
-.registry-table .cell-actions {
-  width: 18rem;
-  white-space: normal;
+.detail-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0;
+  min-width: 0;
+  height: clamp(18rem, 34vh, 24rem);
+  max-height: 24rem;
+  padding: 0;
+  overflow: hidden;
+  border-top: 1px solid rgba(254, 71, 0, 0.12);
+  box-shadow: none;
+  background: rgba(5, 5, 5, 0.82);
 }
 
-.row-actions {
+.detail-panel .panel-head {
+  min-height: 2.35rem;
+  padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid rgba(254, 71, 0, 0.12);
+}
+
+.detail-panel pre {
+  min-height: 0;
+  max-height: none;
+  margin: 0.7rem;
+  overflow: auto;
+  padding: 0.7rem;
+  border: 1px solid rgba(254, 71, 0, 0.14);
+  background: rgba(0, 0, 0, 0.38);
+  font-size: 0.7rem;
+  white-space: pre;
+  scrollbar-color: rgba(254, 71, 0, 0.76) rgba(0, 0, 0, 0.7);
+  scrollbar-width: thin;
+}
+
+.detail-title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem 0.72rem;
+  line-height: 1;
+  min-width: 0;
+}
+
+.detail-title .terminal-label {
+  display: inline-flex;
+  align-items: baseline;
+  line-height: 1;
+}
+
+.detail-state {
+  display: inline-flex;
+  align-items: baseline;
+  max-width: min(42rem, 100%);
+  overflow: hidden;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.detail-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 0.35rem;
+  justify-content: flex-end;
 }
 
-.row-action {
-  min-height: 1.85rem;
-  padding: 0.35rem 0.45rem;
+.detail-actions .plain-button {
+  min-height: 1.95rem;
+  padding: 0.38rem 0.52rem;
   font-size: 0.58rem;
   letter-spacing: 0.08em;
 }
 
-.detail-panel {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-width: 0;
-  padding: 0.85rem;
-  background:
-    linear-gradient(180deg, rgba(254, 71, 0, 0.03), transparent),
-    rgba(0, 0, 0, 0.38);
-}
-
-.detail-panel pre {
-  max-height: min(680px, calc(100vh - 15rem));
-  padding-top: 0.35rem;
-  font-size: 0.7rem;
-  white-space: pre;
-}
-
 .ops-section {
   padding-top: 1.5rem;
-}
-
-.ops-section .collection-grid {
-  margin-bottom: 1rem;
 }
 
 .ops-panel--scroll {
@@ -1156,19 +1188,28 @@ pre {
   }
 
   .explorer-toolbar {
-    grid-template-columns: minmax(9rem, 0.9fr) minmax(14rem, 1.6fr) repeat(3, minmax(7rem, 0.65fr)) auto;
+    grid-template-columns: minmax(10rem, 1fr) minmax(14rem, 2fr);
     align-items: end;
   }
 }
 
 @media (min-width: 1120px) {
   .registry-workbench {
-    grid-template-columns: 15.5rem minmax(0, 1fr) minmax(21rem, 0.32fr);
+    grid-template-columns: 13.25rem minmax(0, 1fr);
   }
 
   .route-panel {
     border-right: 1px solid rgba(254, 71, 0, 0.18);
     border-bottom: 0;
+    grid-row: 1 / span 2;
+  }
+
+  .route-panel__head {
+    align-items: center;
+    box-sizing: border-box;
+    height: var(--workbench-head-height);
+    padding-top: 0;
+    padding-bottom: 0;
   }
 
   .route-tabs {
@@ -1180,14 +1221,51 @@ pre {
 
   .route-tab {
     min-width: 0;
+    align-content: center;
+    box-sizing: border-box;
+    height: var(--workbench-route-row-height);
     border-width: 0 0 1px;
     border-color: rgba(254, 71, 0, 0.11);
     background: transparent;
   }
 
   .explorer-main {
-    border-right: 1px solid rgba(254, 71, 0, 0.18);
     border-bottom: 0;
+  }
+
+  .explorer-toolbar {
+    grid-template-columns:
+      minmax(10rem, 12rem) minmax(14rem, 1fr) minmax(7.5rem, 8.5rem) minmax(8.5rem, 10rem)
+      minmax(5.5rem, 7rem) max-content;
+    box-sizing: border-box;
+    min-height: 0;
+    height: var(--workbench-toolbar-height);
+  }
+
+  .result-toolbar {
+    box-sizing: border-box;
+    min-height: 0;
+    height: var(--workbench-result-height);
+  }
+
+  .table-shell {
+    height: calc(
+      var(--workbench-sources-bottom-offset) - var(--workbench-toolbar-height) - var(--workbench-result-height)
+    );
+    max-height: calc(
+      var(--workbench-sources-bottom-offset) - var(--workbench-toolbar-height) - var(--workbench-result-height)
+    );
+  }
+
+  .registry-table thead th {
+    vertical-align: middle;
+  }
+
+  .detail-panel {
+    grid-column: 2;
+    margin-top: 1px;
+    height: 19rem;
+    max-height: 19rem;
   }
 
   .count-strip {
@@ -1200,8 +1278,8 @@ pre {
     width: min(var(--content-width), calc(100% - 1rem));
   }
 
-  .registry-topline h1 {
-    font-size: clamp(1.8rem, 12vw, 3.2rem);
+  .registry-copy {
+    min-height: 0;
   }
 
   .result-toolbar {
@@ -1234,8 +1312,12 @@ pre {
     min-width: 2.35rem;
   }
 
-  .detail-panel pre,
   .table-shell {
-    max-height: none;
+    max-height: min(26rem, 62vh);
+  }
+
+  .detail-panel {
+    height: 18rem;
+    max-height: 18rem;
   }
 }
